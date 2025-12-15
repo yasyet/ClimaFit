@@ -1,238 +1,133 @@
-# ClimaFit — Project Spec (Markdown)
+# ClimaFit (Closed Project – Open Source Code)
 
-## 1) What ClimaFit Does
+ClimaFit is a **personal outfit comfort modeling system**.  
+The repository contains **open-source code only**.  
+The **service, data, and trained models are private and not publicly accessible**.
 
-ClimaFit is a personal outfit recommendation system. It learns _your_ comfort response to weather by logging **weather + time + outfit + comfort outcomes** at fixed times (12:00, 16:00, 18:00, 20:00).  
-Given current (or forecast) conditions, it evaluates a set of sensible outfit options and recommends the outfit(s) with the highest predicted comfort—minimizing **cold/heat discomfort**, **sweating**, and **wetness**.
-
-ClimaFit does **not** predict the weather. It predicts **your comfort** for each clothing option and chooses the best one.
-
----
-
-## 2) Core Idea (Decision Model)
-
-**Context (weather + time) + Action (outfit) → Predicted Outcome (comfort)**  
-Then a scoring/ranking layer picks the best outfit.
+This project is currently in an **experimental / research phase** and is **not intended for public use**.
 
 ---
 
-## 3) Outputs (What the User Gets)
+## Project Status
 
-- **Top-1 recommendation** (or **Top-3**) for the current conditions
-- **Short explanation** (why it chose it)
-- Optional: warnings (“high wind chill”, “rain likely → waterproof outer layer”)
+- 🔒 **Project access:** Private / closed
+- 📂 **Code visibility:** Open source
+- 📊 **Data:** Private (not included)
+- 🤖 **Models:** Personal, not distributed
+- 🚫 **No public API / app**
 
----
+This repository exists to:
 
-## 4) Data Model
-
-### 4.1 Required Logging Times
-
-- 12:00, 16:00, 18:00, 20:00  
-  Optional: extra logs for unusual events (heavy rain, long outdoor time, sports).
-
-### 4.2 Logged Fields (MVP)
-
-**Context**
-
-- `timestamp` (ISO)
-- `location` (city/station id)
-- `temperature_c`
-- `feels_like_c`
-- `wind_kmh`
-- `humidity_pct`
-- `precip_mm` (or `precip_bool`)
-- `cloud_pct` (optional)
-
-**Action (Outfit)**
-
-- `base_layer` (categorical)
-- `mid_layer` (categorical)
-- `outer_layer` (categorical)
-- optional: `pants`, `addons`, `shoes`
-
-**Labels (Outcomes)**
-
-- `temp_discomfort` in `[-3..+3]` (required)
-- `sweat_level` in `[0..3]` (required)
-- `wetness_level` in `[0..3]` (required if rain)
-- optional: `overall_comfort` in `[0..10]`
-
-**Optional Context**
-
-- `activity` (standing/walking/cycling/sport/commute)
-- `time_outside_min`
-- `notes` (short)
-
-### 4.3 Storage
-
-- Start: `CSV` (easy)
-- Upgrade: `SQLite` (safer + scalable)
-- Keep a strict vocabulary for categories to avoid label drift.
+- document the system architecture,
+- allow reproducibility of the approach,
+- showcase engineering and ML design decisions.
 
 ---
 
-## 5) System Components (Subprojects)
+## What ClimaFit Is
 
-### 5.1 Data Collection (Logging)
+ClimaFit learns **how a specific person feels in specific weather conditions**, given what they are wearing.
 
-Build a logger that creates consistent entries at the required times.  
-Goal: minimal friction, consistent fields, no missing labels.
+It predicts **comfort**, not fashion and not weather.
 
-Deliverables:
+**Input**
 
-- Logging template (CSV/JSON)
-- Quick input method (form / shortcut / CLI)
+- Weather conditions (temperature, wind, rain, humidity, etc.)
+- Time of day
+- Outfit configuration (layers)
 
----
+**Output**
 
-### 5.2 Weather Ingestion
-
-Fetch weather data for the chosen location at logging time and at recommendation time.
-
-Options:
-
-- Manual entry (MVP)
-- API-based (later): current conditions + optional forecast
-
-Deliverables:
-
-- `get_weather(location, timestamp)` module
-- normalization (units, missing fields)
+- Predicted comfort (cold / heat, sweating, wetness)
+- Ranked outfit recommendations (Top-1 / Top-3)
 
 ---
 
-### 5.3 Schema + Validation
+## Core Idea
 
-Enforce consistent categories and numeric ranges.
-
-Deliverables:
-
-- fixed category lists (base/mid/outer/addons)
-- validators (range checks, required fields)
-- automatic cleanup rules (e.g. unknown → reject)
+(weather + time) + outfit → predicted comfort
+The system evaluates multiple valid outfit options and selects the one with the **best predicted comfort outcome**.
 
 ---
 
-### 5.4 Feature Engineering (Preprocessing)
+## Repository Scope
 
-Transform raw values into model-ready features:
+This repository includes:
 
-- encode categories (one-hot or embeddings)
-- time features (hour, month, season)
-- derived weather features (wind chill relevance, rain flag)
+- data schema definitions
+- logging & validation logic
+- feature engineering pipeline
+- model training and inference code
+- recommendation and ranking logic
 
-Deliverables:
+This repository does **not** include:
 
-- preprocessing pipeline saved with the model
-- versioned feature set
-
----
-
-### 5.5 Model Training
-
-Train a model to predict comfort outcomes from:
-`(weather + time + outfit) → (temp_discomfort, sweat_level, wetness_level)`
-
-Recommended model (tabular-friendly):
-
-- Gradient boosted trees (CatBoost / LightGBM / XGBoost)
-
-NN option (later):
-
-- small MLP + embeddings for categorical outfit fields
-
-Deliverables:
-
-- training script/notebook
-- evaluation report (by-date split)
-- saved model artifact + preprocessing artifact
+- personal datasets
+- cloud credentials
+- trained models
+- deployment endpoints
 
 ---
 
-### 5.6 Scoring + Recommendation Engine
+## Data Handling Philosophy
 
-Generate sensible outfit candidates, predict outcomes, compute score, rank.
+- Data is **append-only**
+- Data is **user-owned**
+- Data is **never auto-shared**
+- Data storage is **external to this repository**
 
-Example score:
-`score = -abs(temp_discomfort) - α*sweat_level - β*wetness_level`
-
-Deliverables:
-
-- candidate generator (valid combos only)
-- ranker (top-1/top-3)
-- explanation generator (simple rules tied to features)
+The canonical dataset is stored as **CSV files in private cloud storage**.
 
 ---
 
-### 5.7 Baseline Rules (Safety Net)
+## CSV-Based Dataset (Canonical Format)
 
-Before enough data exists, use a rule-based baseline or blend baseline + model.
+ClimaFit uses CSV as the **single source of truth** for logged data.
 
-Deliverables:
+Key principles:
 
-- baseline thresholds (feels_like/wind/rain)
-- blending strategy (e.g. model overrides only after N samples)
+- human-readable
+- debuggable
+- versionable
+- cloud-compatible
 
----
-
-### 5.8 Analytics + Feedback Loop
-
-Track performance and data coverage:
-
-- where recommendations fail
-- which weather zones have little data
-- comfort trends over seasons
-
-Deliverables:
-
-- simple dashboard or reports (weekly/monthly)
-- “data gaps” checklist (what to log more)
+The exact schema is documented in `/docs/data_schema.md`.
 
 ---
 
-### 5.9 Deployment (User Interface)
+## Cloud Storage (High-Level)
 
-Make ClimaFit usable day-to-day:
+The system is designed to work with:
 
-- CLI script, web dashboard, phone shortcut, or desktop widget
+- private cloud object storage
+- monthly partitioned CSV files
+- local caching + explicit sync
 
-Deliverables:
-
-- `recommend_now()` command
-- saved model loading + fast inference
-- retrain trigger (weekly or every N new samples)
+No cloud provider is hard-coded into the codebase.
 
 ---
 
-## 6) Project Milestones
+## Why the Project Is Closed
 
-### Milestone A — MVP (1–2 weeks of logs)
+ClimaFit is:
 
-- Manual logging template
-- Basic baseline recommendations
-- Minimal candidate set (e.g. 10–20 outfits)
+- highly personal
+- based on subjective comfort data
+- continuously evolving
 
-### Milestone B — First Model (200–300 logs)
-
-- Train first predictive model
-- Top-3 recommendations + explanation
-- Basic evaluation (date-based split)
-
-### Milestone C — Reliable Tool (500–1000 logs)
-
-- Better candidate generation
-- Regular retraining
-- Analytics + error tracking
+Opening the _code_ improves quality.  
+Keeping the _system_ closed preserves correctness, privacy, and control.
 
 ---
 
-## 7) Quality Targets
+## License
 
-- Logging completeness: > 90% entries have all required fields
-- Recommendation stability: no “nonsense combos”
-- Comfort improvement: increasing average predicted and reported comfort over time
+Code is released under an open-source license (MIT recommended).  
+**Data, trained models, and brand name are excluded from the license.**
 
 ---
 
-## 8) Directory Layout (Suggested)
+## Disclaimer
+
+This repository is provided for educational and technical reference.  
+Running the code without adapting it to your own data and cloud setup will not produce meaningful results.
