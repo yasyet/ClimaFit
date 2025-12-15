@@ -1,4 +1,4 @@
-# CloudSaving.py
+# CloudSheetService.py
 # Author: Yasin Holzenkämpfer
 # Last Modified: 15.12.2025
 #
@@ -12,6 +12,10 @@ from typing import List, Optional, Sequence
 import re
 import csv
 import io
+import os
+
+# Replace environment_variables with direct environment variable access
+SERVICE_ACCOUNT_FILE = os.getenv("SERVICE_ACCOUNT_FILE", "path/to/default/service_account.json")
 
 
 # ----------------------------
@@ -19,7 +23,7 @@ import io
 # ----------------------------
 
 DEFAULT_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-DEFAULT_SERVICE_ACCOUNT_FILE = "climafit-481315-a2fe692626ce.json"
+DEFAULT_SERVICE_ACCOUNT_FILE = SERVICE_ACCOUNT_FILE
 DEFAULT_SHEET_RANGE = "Sheet1!A1"  # where the CSV blob will be stored
 
 
@@ -86,6 +90,31 @@ def create_new_google_sheet(sheet_name: str) -> str:
     )
     spreadsheet_id = spreadsheet.get("spreadsheetId")
     return f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit"
+
+
+def google_sheet_exists(
+        spreadsheet_url_or_id: str,
+        service_account_file: str = DEFAULT_SERVICE_ACCOUNT_FILE
+) -> bool:
+    """
+    Checks if a Google Sheet exists.
+
+    Args:
+        spreadsheet_url_or_id: Spreadsheet URL or spreadsheetId.
+        service_account_file: Path to Google service account json.
+
+    Returns:
+        bool: True if the Google Sheet exists, False otherwise.
+    """
+    spreadsheet_id = _extract_spreadsheet_id(spreadsheet_url_or_id)
+    service = _build_sheets_service(service_account_file=service_account_file)
+
+    try:
+        service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+        return True
+    except Exception:
+        return False
+    
 
 
 def set_csv_data(
