@@ -122,7 +122,7 @@ Keeping the _system_ closed preserves correctness, privacy, and control.
 
 ## License
 
-Code is released under an open-source license (MIT recommended).  
+Code is released under an open-source license.  
 **Data, trained models, and brand name are excluded from the license.**
 
 ---
