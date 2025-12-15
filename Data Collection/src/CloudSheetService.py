@@ -15,7 +15,7 @@ import io
 import os
 
 # Replace environment_variables with direct environment variable access
-SERVICE_ACCOUNT_FILE = os.getenv("SERVICE_ACCOUNT_FILE", "path/to/default/service_account.json")
+SERVICE_ACCOUNT_FILE = os.getenv("SERVICE_ACCOUNT_FILE")
 
 
 # ----------------------------
@@ -115,6 +115,28 @@ def google_sheet_exists(
     except Exception:
         return False
     
+
+def find_sheet_id_by_name(sheet_title: str, service_account_file: str = DEFAULT_SERVICE_ACCOUNT_FILE) -> Optional[int]:
+    """
+    Finds the sheet ID of a sheet by its title.
+
+    Args:
+        sheet_title: The title of the sheet to find.
+        service_account_file: Path to Google service account json.
+
+    Returns:
+        The sheet ID if found, otherwise None.
+    """
+    service = _build_sheets_service(service_account_file=service_account_file)
+    spreadsheet = service.spreadsheets().get(spreadsheetId=sheet_title).execute()
+    sheets = spreadsheet.get("sheets", [])
+    
+    for sheet in sheets:
+        properties = sheet.get("properties", {})
+        if properties.get("title") == sheet_title:
+            return properties.get("sheetId")
+    
+    return None
 
 
 def set_csv_data(
