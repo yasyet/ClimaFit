@@ -2,26 +2,25 @@
 # Author: Yasin Holzenkämpfer
 # Last Modified: 15.12.2025
 #
-# Description: This module tests the CloudSheetService and TimeService modules.
+# Description: This module tests the modules.
 
-# The following code will add a line to a csv. If the csv does not exist yet it will create it.
-from CloudSheetService import *
-from TimeService import *
+import os
+import dotenv
 
-peoples = ["First Name", "Second Name", "Age", "Date", "Time"]
 
-for i in range(5):
-    first_name = f"FirstName{i}"
-    second_name = f"SecondName{i}"
-    age = str(20 + i)
-    date = get_current_date()
-    time = get_current_time()
-    person = [first_name, second_name, age, date, time]
-    peoples.append(person)
+from WeatherService import WeatherService
+from DataService import DataService
 
-sheet_name = "TestSheet-" + get_current_date()
-sheet_id = find_sheet_id_by_name(sheet_name)
-if not sheet_id:
-    sheet_id = create_new_google_sheet(sheet_name)
+def main():
+    # Load environment variables
+    dotenv.load_dotenv()
+    weather_api_key = os.getenv("openweathermap_api_key", "")
 
-set_csv_data(sheet_id, peoples)
+    # Test WeatherService
+    weather_service = WeatherService(api_key=weather_api_key)
+    weather_data = weather_service.get_current_weather("Delmenhorst")
+    extracted_data = weather_service.extract_data(weather_data, ["main"])
+    print("Extracted Weather Data:", extracted_data)
+
+if __name__ == "__main__":
+    main()
